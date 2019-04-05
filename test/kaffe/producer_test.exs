@@ -7,6 +7,7 @@ defmodule Kaffe.ProducerTest do
     Process.register(self(), :test_case)
     update_producer_config(:topics, ["topic", "topic2"])
     update_producer_config(:partition_strategy, :md5)
+    :ok = Kaffe.Producer.start_producer_client()
     TestBrod.set_produce_response(:ok)
     :ok
   end
@@ -133,6 +134,16 @@ defmodule Kaffe.ProducerTest do
 
       :ok = Producer.produce_sync("topic", 0, "key", "value")
       assert_receive [:produce_sync, "topic", 0, "key", "value"]
+    end
+  end
+
+  describe "start_link" do
+    test "can be started without any options" do
+      assert :ok == Producer.start_producer_client()
+    end
+
+    test "can be started with custom options" do
+      assert :ok == Producer.start_producer_client(%{allow_topic_auto_creation: false})
     end
   end
 
