@@ -3,8 +3,10 @@ defmodule Kaffe.Config.ProducerTest do
 
   describe "configuration/1" do
     test "custom options override values returned from base config" do
-      %{producer_config: producer_config} = Kaffe.Config.Producer.configuration(%{allow_topic_auto_creation: false})
+      overrides = %{endpoints: "localhost:9092", allow_topic_auto_creation: false}
+      %{producer_config: producer_config} = config = Kaffe.Config.Producer.configuration(overrides)
       assert Keyword.get(producer_config, :allow_topic_auto_creation) == false
+      assert Map.get(config, :endpoints) == [localhost: 9092]
     end
   end
 

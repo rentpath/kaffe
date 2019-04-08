@@ -1,13 +1,10 @@
 defmodule Kaffe.Config.Consumer do
-  import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
+  import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1, parse_overrides: 1]
 
   def configuration(overrides \\ %{}) do
-    Map.merge(base_config(), overrides)
-  end
-
-  def base_config() do
-    %{
-      endpoints: endpoints(),
+    new_overrides = parse_overrides(overrides)
+    base_config = %{
+      endpoints: endpoints(new_overrides),
       subscriber_name: subscriber_name(),
       consumer_group: consumer_group(),
       topics: topics(),
@@ -24,6 +21,7 @@ defmodule Kaffe.Config.Consumer do
       offset_reset_policy: offset_reset_policy(),
       worker_allocation_strategy: worker_allocation_strategy()
     }
+    Map.merge(base_config, new_overrides)
   end
 
   def consumer_group, do: config_get!(:consumer_group)
@@ -36,11 +34,11 @@ defmodule Kaffe.Config.Consumer do
 
   def async_message_ack, do: config_get(:async_message_ack, false)
 
-  def endpoints do
-    if heroku_kafka?() do
-      heroku_kafka_endpoints()
-    else
-      parse_endpoints(config_get!(:endpoints))
+  def endpoints(overrides) do
+    cond do
+      heroku_kafka?() -> heroku_kafka_endpoints()
+      endpoints = Map.get(overrides, :endpoints) -> endpoints
+      true -> parse_endpoints(config_get!(:endpoints))
     end
   end
 
