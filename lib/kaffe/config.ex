@@ -15,6 +15,13 @@ defmodule Kaffe.Config do
     |> Enum.map(&url_endpoint_to_tuple/1)
   end
 
+  def parse_overrides(overrides) do
+    case Map.get(overrides, :endpoints) do
+      nil -> overrides
+      endpoints -> Map.put(overrides, :endpoints, parse_endpoints(endpoints))
+    end
+  end
+
   def url_endpoint_to_tuple(endpoint) do
     [ip, port] = endpoint |> String.split(":")
     {ip |> String.to_atom(), port |> String.to_integer()}

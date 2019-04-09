@@ -1,23 +1,25 @@
 defmodule Kaffe.Config.Producer do
-  import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1]
+  import Kaffe.Config, only: [heroku_kafka_endpoints: 0, parse_endpoints: 1, parse_overrides: 1]
 
-  def configuration(producer_overrides \\ %{}) do
-    %{
-      endpoints: endpoints(),
-      producer_config: client_producer_config(producer_overrides),
+  def configuration(overrides \\ %{}) do
+    new_overrides = parse_overrides(overrides)
+    base_config = %{
+      endpoints: endpoints(new_overrides),
+      producer_config: client_producer_config(new_overrides),
       client_name: config_get(:client_name, :kaffe_producer_client),
       topics: producer_topics(),
       partition_strategy: config_get(:partition_strategy, :md5)
     }
+    Map.merge(base_config, new_overrides)
   end
 
   def producer_topics, do: config_get!(:topics)
 
-  def endpoints do
-    if heroku_kafka?() do
-      heroku_kafka_endpoints()
-    else
-      parse_endpoints(config_get!(:endpoints))
+  def endpoints(overrides) do
+    cond do
+      heroku_kafka?() -> heroku_kafka_endpoints()
+      endpoints = Map.get(overrides, :endpoints) -> endpoints
+      true -> parse_endpoints(config_get!(:endpoints))
     end
   end
 
